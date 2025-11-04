@@ -1,2 +1,0 @@
-src/ngircd/client.c(439): Warning! W303: Parameter 'Client' has been defined, but not referenced
-src/ngircd/client.c(439): Warning! W303: Parameter 'User' has been defined, but not referenced

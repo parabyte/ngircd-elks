@@ -1,4 +1,0 @@
-src/ngircd/parse.c(367): Warning! W303: Parameter 'Idx' has been defined, but not referenced
-src/ngircd/parse.c(367): Warning! W303: Parameter 'Req' has been defined, but not referenced
-src/ngircd/parse.c(381): Warning! W303: Parameter 'Idx' has been defined, but not referenced
-src/ngircd/parse.c(381): Warning! W303: Parameter 'Req' has been defined, but not referenced

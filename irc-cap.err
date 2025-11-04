@@ -1,4 +1,0 @@
-src/ngircd/irc-cap.c(119): Warning! W303: Parameter 'Arg' has been defined, but not referenced
-src/ngircd/irc-cap.c(138): Warning! W303: Parameter 'Arg' has been defined, but not referenced
-src/ngircd/irc-cap.c(182): Warning! W303: Parameter 'Client' has been defined, but not referenced
-src/ngircd/irc-cap.c(182): Warning! W303: Parameter 'Arg' has been defined, but not referenced

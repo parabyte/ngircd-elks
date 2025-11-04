@@ -1,3 +1,0 @@
-src/ngircd/irc-info.c(483): Warning! W303: Parameter 'c' has been defined, but not referenced
-src/ngircd/irc-info.c(986): Warning! W303: Parameter 'Req' has been defined, but not referenced
-src/ngircd/irc-info.c(1081): Warning! W303: Parameter 'Req' has been defined, but not referenced

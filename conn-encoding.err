@@ -1,2 +1,0 @@
-src/ngircd/conn-encoding.c(149): Warning! W303: Parameter 'Conn' has been defined, but not referenced
-src/ngircd/conn-encoding.c(176): Warning! W303: Parameter 'Conn' has been defined, but not referenced

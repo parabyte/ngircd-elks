@@ -1,7 +1,0 @@
-src/ngircd/resolve.c(49): Warning! W303: Parameter 'cbfunc' has been defined, but not referenced
-src/ngircd/resolve.c(49): Warning! W303: Parameter 'identsock' has been defined, but not referenced
-src/ngircd/resolve.c(48): Warning! W303: Parameter 's' has been defined, but not referenced
-src/ngircd/resolve.c(48): Warning! W303: Parameter 'Addr' has been defined, but not referenced
-src/ngircd/resolve.c(56): Warning! W303: Parameter 'cbfunc' has been defined, but not referenced
-src/ngircd/resolve.c(55): Warning! W303: Parameter 's' has been defined, but not referenced
-src/ngircd/resolve.c(55): Warning! W303: Parameter 'Host' has been defined, but not referenced

@@ -1,9 +1,0 @@
-src/ngircd/io.c(155): Warning! W303: Parameter 's' has been defined, but not referenced
-src/ngircd/io.c(155): Warning! W303: Parameter 'b' has been defined, but not referenced
-src/ngircd/io.c(155): Warning! W303: Parameter 'a' has been defined, but not referenced
-src/ngircd/io.c(247): Warning! W303: Parameter 'x' has been defined, but not referenced
-src/ngircd/io.c(250): Warning! W303: Parameter 'ev' has been defined, but not referenced
-src/ngircd/io.c(355): Warning! W303: Parameter 'x' has been defined, but not referenced
-src/ngircd/io.c(358): Warning! W303: Parameter 'ev' has been defined, but not referenced
-src/ngircd/io.c(523): Warning! W303: Parameter 'ev' has been defined, but not referenced
-src/ngircd/io.c(643): Warning! W303: Parameter 'ev' has been defined, but not referenced
