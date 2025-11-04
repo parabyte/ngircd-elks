@@ -100,6 +100,11 @@ static void Account_Connection PARAMS((void));
 static void Throttle_Connection PARAMS((const CONN_ID Idx, CLIENT *Client,
 					const int Reason, unsigned int Value));
 
+static unsigned long long bytes_to_tenths_kb(size_t bytes)
+{
+	return (((unsigned long long)bytes) * 10ULL + 512ULL) / 1024ULL;
+}
+
 static array My_Listeners;
 static array My_ConnArray;
 static size_t NumConnections, NumConnectionsMax, NumConnectionsAccepted;
@@ -1041,12 +1046,16 @@ Conn_Close(CONN_ID Idx, const char *LogMsg, const char *FwdMsg, bool InformClien
 	/* Close connection. Open pipes of asynchronous resolver
 	 * sub-processes are closed down. */
 
-	CLIENT *c;
-	double in_k, out_k;
-	UINT16 port;
+    CLIENT *c;
+    UINT16 port;
+    unsigned long in_whole, out_whole;
+    unsigned int in_frac, out_frac;
+    unsigned long long in_tenths, out_tenths;
 #ifdef ZLIB
-	double in_z_k, out_z_k;
-	int in_p, out_p;
+    unsigned long in_z_whole, out_z_whole;
+    unsigned int in_z_frac, out_z_frac;
+    unsigned long long in_z_tenths, out_z_tenths;
+    int in_p, out_p;
 #endif
 
 	assert( Idx > NONE );
@@ -1070,6 +1079,12 @@ Conn_Close(CONN_ID Idx, const char *LogMsg, const char *FwdMsg, bool InformClien
 
 	/* Search client, if any */
 	c = Conn_GetClient( Idx );
+	in_tenths = bytes_to_tenths_kb(My_Connections[Idx].bytes_in);
+	out_tenths = bytes_to_tenths_kb(My_Connections[Idx].bytes_out);
+	in_whole = (unsigned long)(in_tenths / 10ULL);
+	in_frac = (unsigned int)(in_tenths % 10ULL);
+	out_whole = (unsigned long)(out_tenths / 10ULL);
+	out_frac = (unsigned int)(out_tenths % 10ULL);
 
 	/* Should the client be informed? */
 	if (InformClient) {
@@ -1077,11 +1092,10 @@ Conn_Close(CONN_ID Idx, const char *LogMsg, const char *FwdMsg, bool InformClien
 		/* Send statistics to client if registered as user: */
 		if ((c != NULL) && (Client_Type(c) == CLIENT_USER)) {
 			Conn_WriteStr( Idx,
-			 ":%s NOTICE %s :%sConnection statistics: client %.1f kb, server %.1f kb.",
+			 ":%s NOTICE %s :%sConnection statistics: client %lu.%01u kb, server %lu.%01u kb.",
 			 Client_ID(Client_ThisServer()), Client_ID(c),
 			 NOTICE_TXTPREFIX,
-			 (double)My_Connections[Idx].bytes_in / 1024,
-			 (double)My_Connections[Idx].bytes_out / 1024);
+			 in_whole, in_frac, out_whole, out_frac);
 		}
 #endif
 		/* Send ERROR to client (see RFC 2812, section 3.1.7) */
@@ -1124,34 +1138,43 @@ Conn_Close(CONN_ID Idx, const char *LogMsg, const char *FwdMsg, bool InformClien
 		Client_Destroy(c, LogMsg, FwdMsg, true);
 
 	/* Calculate statistics and log information */
-	in_k = (double)My_Connections[Idx].bytes_in / 1024;
-	out_k = (double)My_Connections[Idx].bytes_out / 1024;
 #ifdef ZLIB
 	if (Conn_OPTION_ISSET( &My_Connections[Idx], CONN_ZIP)) {
-		in_z_k = (double)My_Connections[Idx].zip.bytes_in / 1024;
-		out_z_k = (double)My_Connections[Idx].zip.bytes_out / 1024;
-		/* Make sure that no division by zero can occur during
-		 * the calculation of in_p and out_p: in_z_k and out_z_k
-		 * are non-zero, that's guaranteed by the protocol until
-		 * compression can be enabled. */
-		if (in_z_k <= 0)
-			in_z_k = in_k;
-		if (out_z_k <= 0)
-			out_z_k = out_k;
-		in_p = (int)(( in_k * 100 ) / in_z_k );
-		out_p = (int)(( out_k * 100 ) / out_z_k );
+		in_z_tenths = bytes_to_tenths_kb(My_Connections[Idx].zip.bytes_in);
+		out_z_tenths = bytes_to_tenths_kb(My_Connections[Idx].zip.bytes_out);
+		if (in_z_tenths == 0 && in_tenths != 0)
+			in_z_tenths = in_tenths;
+		if (out_z_tenths == 0 && out_tenths != 0)
+			out_z_tenths = out_tenths;
+		in_z_whole = (unsigned long)(in_z_tenths / 10ULL);
+		in_z_frac = (unsigned int)(in_z_tenths % 10ULL);
+		out_z_whole = (unsigned long)(out_z_tenths / 10ULL);
+		out_z_frac = (unsigned int)(out_z_tenths % 10ULL);
+		if (My_Connections[Idx].zip.bytes_in > 0) {
+			unsigned long long zip_in_bytes = My_Connections[Idx].zip.bytes_in;
+			in_p = (int)((My_Connections[Idx].bytes_in * 100ULL + zip_in_bytes / 2ULL) / zip_in_bytes);
+		} else {
+			in_p = 100;
+		}
+		if (My_Connections[Idx].zip.bytes_out > 0) {
+			unsigned long long zip_out_bytes = My_Connections[Idx].zip.bytes_out;
+			out_p = (int)((My_Connections[Idx].bytes_out * 100ULL + zip_out_bytes / 2ULL) / zip_out_bytes);
+		} else {
+			out_p = 100;
+		}
 		Log(LOG_INFO,
-		    "Connection %d with \"%s:%d\" closed (in: %.1fk/%.1fk/%d%%, out: %.1fk/%.1fk/%d%%).",
+		    "Connection %d with \"%s:%d\" closed (in: %lu.%01luk/%lu.%01luk/%d%%, out: %lu.%01luk/%lu.%01luk/%d%%).",
 		    Idx, My_Connections[Idx].host, port,
-		    in_k, in_z_k, in_p, out_k, out_z_k, out_p);
+		    in_whole, in_frac, in_z_whole, in_z_frac, in_p,
+		    out_whole, out_frac, out_z_whole, out_z_frac, out_p);
 	}
 	else
 #endif
 	{
 		Log(LOG_INFO,
-		    "Connection %d with \"%s:%d\" closed (in: %.1fk, out: %.1fk).",
+		    "Connection %d with \"%s:%d\" closed (in: %lu.%01luk, out: %lu.%01luk).",
 		    Idx, My_Connections[Idx].host, port,
-		    in_k, out_k);
+		    in_whole, in_frac, out_whole, out_frac);
 	}
 
 	/* Servers: Modify time of next connect attempt? */

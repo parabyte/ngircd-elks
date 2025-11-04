@@ -18,11 +18,22 @@ fi
 # shellcheck source=/dev/null
 source "$TOPDIR/libc/watcom.model"
 MODEL=${MODEL:-l}
-LIBC_LIBS=()
-LIBC_LIBS+=("$TOPDIR/libc/libch.lib")
-LIBC_LIBS+=("$TOPDIR/libc/libcc.lib")
-if [[ -n "${LIBC:-}" ]]; then
-	LIBC_LIBS+=("$LIBC")
+
+LIBC_LIB="$TOPDIR/libc/libc${MODEL}.lib"
+EWLINK="$TOPDIR/elks/tools/bin/ewlink"
+
+if [[ ! -f "$LIBC_LIB" ]]; then
+	cat <<EOF >&2
+Missing ELKS Watcom libc archive: $LIBC_LIB
+Please build it first, for example:
+  make -C "$TOPDIR/libc" -f watcom.mk MODEL=${MODEL}
+EOF
+	exit 1
+fi
+
+if [[ ! -x "$EWLINK" ]]; then
+	echo "ELKS ewlink helper not found or not executable: $EWLINK" >&2
+	exit 1
 fi
 
 BUILD_ROOT="$SCRIPT_DIR/build-elks"
@@ -41,16 +52,6 @@ elif [[ -x $WATCOM/binl/wcc ]]; then
     WCC=${WCC:-$WATCOM/binl/wcc}
 else
     WCC=${WCC:-wcc}
-fi
-
-if command -v owcc >/dev/null 2>&1; then
-    OWCC=${OWCC:-$(command -v owcc)}
-elif [[ -x $WATCOM/binl64/owcc ]]; then
-    OWCC=${OWCC:-$WATCOM/binl64/owcc}
-elif [[ -x $WATCOM/binl/owcc ]]; then
-    OWCC=${OWCC:-$WATCOM/binl/owcc}
-else
-    OWCC=${OWCC:-owcc}
 fi
 
 CCOPTSS="-os -bt=none -0 -zq -s -ml -wx -zastd=c99 -zls"
@@ -141,24 +142,10 @@ build_sources "$CCOPTST" ngircd \
 	resolve.c \
 	sighandlers.c
 
-LINK_FLAGS=(
-	-bos2
-	-s
-	-Wl,option -Wl,start=_start
-	-Wl,option -Wl,dosseg
-	-Wl,option -Wl,stack=0x0800
-	-Wl,option -Wl,heapsize=0x0400
-)
-for lib in "${LIBC_LIBS[@]}"; do
-	if [[ -f "$lib" ]]; then
-		LINK_FLAGS+=(-Wl,library -Wl,"$lib")
-	fi
-done
-
 OUTPUT_OS2="$BIN_DIR/ngircd.os2"
 
-echo "$OWCC ${LINK_FLAGS[*]} -o $OUTPUT_OS2 ${OBJ_FILES[*]}"
-$OWCC "${LINK_FLAGS[@]}" -o "$OUTPUT_OS2" "${OBJ_FILES[@]}"
+echo "$EWLINK --stack 0x0800 --heap 0x0400 -o $OUTPUT_OS2 ${OBJ_FILES[*]}"
+"$EWLINK" --stack 0x0800 --heap 0x0400 -o "$OUTPUT_OS2" "${OBJ_FILES[@]}"
 
 find "$OBJ_DIR" -name '*.obj' -delete
 find "$OBJ_DIR" -name '*.err' -delete

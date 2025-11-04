@@ -92,11 +92,20 @@ file(s) and explains the rationale for the change.
       Watcom so the ELKS libc omissions do not block compilation.
 
 23. build-elks-ngircd.sh
-    - Linked against `libch.lib`/`libcc.lib` by default (optionally honoring
-      `LIBC`), re-enabled Watcom default libraries so the runtime startup and
-      math helpers resolve, reduced the linker stack to stay within the 64 KiB
-      ELKS segment limit, and skipped missing library paths to silence
-      Watcom’s W1008 warning.
+    - Switched to the ELKS `ewlink` helper so only the Watcom-built
+      `libc*.lib` archives are linked, added a guard that points developers to
+      `make -C libc -f watcom.mk` when the archive is missing, and kept the
+      reduced stack/heap sizing for ELKS limits.
+
+24. src/portab/vsnprintf.c
+    - Disabled floating-point formatting support for ELKS builds so the code
+      never calls the Watcom soft-float helper routines that are absent from
+      the ELKS libc.
+
+25. src/ngircd/conn.c
+    - Reworked the connection statistics logging to use integer-based
+      fixed-point formatting and percentage math, eliminating all runtime
+      floating-point dependencies.
 
 ELKS Image Integration
 ----------------------
@@ -104,11 +113,8 @@ ELKS Image Integration
       . ./env-elks-ngircd.sh
 2. Build ngIRCd for ELKS:
       ./build-elks-ngircd.sh
-   The Watcom pass emits `build-elks/bin/ngircd.os2`.
-3. Convert the OS/2 binary to an ELKS a.out executable using the helper shipped
-   with the ELKS tree:
-      $TOPDIR/elks/tools/objtools/os2toelks -f elks \
-          -o build-elks/bin/ngircd build-elks/bin/ngircd.os2
+   The Watcom pass emits `build-elks/bin/ngircd.os2`. Convert it with
+   `os2toelks` later if you need an ELKS a.out image.
 4. Stage the daemon on your ELKS filesystem image. For the stock layout you can
    place it in the rootfs template before rebuilding disk images:
       cp build-elks/bin/ngircd \
