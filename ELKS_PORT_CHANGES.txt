@@ -107,24 +107,4 @@ file(s) and explains the rationale for the change.
       fixed-point formatting and percentage math, eliminating all runtime
       floating-point dependencies.
 
-ELKS Image Integration
-----------------------
-1. Make sure the ELKS Watcom libc exists (required once per checkout):
-      make -C "$TOPDIR/libc" -f watcom.mk MODEL=l
-2. Prepare the toolchain environment:
-      . ./env-elks-ngircd.sh
-3. Build ngIRCd for ELKS:
-      ./build-elks-ngircd.sh
-   The Watcom pass emits `build-elks/bin/ngircd.os2`.
-4. (Optional) Convert to an ELKS a.out binary if you need it for direct
-   deployment outside of the OS/2 conversion workflow:
-      $TOPDIR/elks/tools/objtools/os2toelks -f elks \
-          -o build-elks/bin/ngircd build-elks/bin/ngircd.os2
-5. Stage the daemon on your ELKS filesystem image. For the stock layout place
-   it in the rootfs template before rebuilding disk images:
-      cp build-elks/bin/ngircd.os2 \
-         $TOPDIR/elkscmd/rootfs_template/usr/bin/ngircd.os2
-6. Provide a basic configuration under `/etc/ngircd.conf` if it does not yet
-   exist. The default ngIRCd examples from upstream work unchanged on ELKS.
-7. Rebuild or refresh the ELKS disk image and boot it. Start the daemon with:
-      ngircd -f /etc/ngircd.conf
+
