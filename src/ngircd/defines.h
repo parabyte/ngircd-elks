@@ -56,7 +56,7 @@
 #define MAX_SERVERS 64
 
 /** Max. number of WHOWAS list items that can be stored. */
-#define MAX_WHOWAS 64
+#define MAX_WHOWAS 8
 
 /** Size of default connection pool. */
 #define CONNECTION_POOL 100

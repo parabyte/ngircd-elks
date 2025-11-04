@@ -107,4 +107,14 @@ file(s) and explains the rationale for the change.
       fixed-point formatting and percentage math, eliminating all runtime
       floating-point dependencies.
 
+26. src/ngircd/defines.h
+    - Reduced MAX_WHOWAS from 64 to 8 to fit within ELKS 64KB data segment
+      limit (WHOWAS array was consuming ~19KB).
+
+27. build-elks-ngircd.sh
+    - Increased stack size from 0x0800 (2KB) to 0x1000 (4KB) to accommodate
+      large stack buffers like readbuf[READBUFFER_LEN] (2048 bytes) in conn.c
+      and config parsing buffers in conf.c.
+    - Increased heap size from 0x0400 (1KB) to 0x2000 (8KB) to fix "OUT OF
+      HEAP SPACE" errors during runtime dynamic allocations.
 

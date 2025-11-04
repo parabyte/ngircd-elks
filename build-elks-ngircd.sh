@@ -144,8 +144,8 @@ build_sources "$CCOPTST" ngircd \
 
 OUTPUT_OS2="$BIN_DIR/ngircd.os2"
 
-echo "$EWLINK --stack 0x0800 --heap 0x0400 -o $OUTPUT_OS2 ${OBJ_FILES[*]}"
-"$EWLINK" --stack 0x0800 --heap 0x0400 -o "$OUTPUT_OS2" "${OBJ_FILES[@]}"
+echo "$EWLINK --stack 0x1000 --heap 0x2000 -o $OUTPUT_OS2 ${OBJ_FILES[*]}"
+"$EWLINK" --stack 0x1000 --heap 0x2000 -o "$OUTPUT_OS2" "${OBJ_FILES[@]}"
 
 find "$OBJ_DIR" -name '*.obj' -delete
 find "$OBJ_DIR" -name '*.err' -delete
