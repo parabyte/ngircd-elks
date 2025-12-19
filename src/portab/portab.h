@@ -25,23 +25,6 @@
 # define NDEBUG
 #endif
 
-/* compiler features */
-
-#if (__GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ > 7))
-# define PUNUSED(x) __attribute__ ((unused)) x
-# define UNUSED     __attribute__ ((unused))
-#else
-# define PUNUSED(x) x
-# define UNUSED
-#endif
-
-#ifdef __WATCOMC__
-# undef PUNUSED
-# undef UNUSED
-# define PUNUSED(x) x
-# define UNUSED
-#endif
-
 #ifndef PARAMS
 # if PROTOTYPES
 #  define PARAMS(args) args
@@ -66,6 +49,16 @@
 #  include <stdint.h>
 #  define NGIRC_GOT_INTTYPES
 # endif
+#endif
+
+/* compiler features */
+
+#if (__GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ > 7))
+# define PUNUSED(x) __attribute__ ((unused)) x
+# define UNUSED     __attribute__ ((unused))
+#else
+# define PUNUSED(x) x
+# define UNUSED
 #endif
 
 #ifndef PROTOTYPES
@@ -135,6 +128,10 @@ typedef unsigned char bool;
 # define SINGLE_USER_OS
 #endif
 
+#ifdef __ELKS__
+# define SINGLE_USER_OS
+#endif
+
 /* configure options */
 
 #ifndef HAVE_socklen_t
@@ -185,6 +182,8 @@ extern int vsnprintf PARAMS(( char *str, size_t count, const char *fmt, va_list 
 #ifndef SYSCONFDIR
 # define SYSCONFDIR "/etc"
 #endif
+
+#include "compat.h"
 
 #endif
 

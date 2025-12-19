@@ -33,12 +33,7 @@
 #include <grp.h>
 #include <sys/types.h>
 #include <dirent.h>
-#ifdef __WATCOMC__
-extern int gethostname(char *, int);
-#endif
-#ifndef NGIRCD_DISABLE_RESOLVER
 #include <netdb.h>
-#endif
 
 #ifdef HAVE_SYS_RESOURCE_H
 #	include <sys/resource.h>
@@ -816,7 +811,7 @@ Set_Defaults(bool InitServers)
 	Conf_ConnectIPv6 = false;
 #endif
 	strcpy(Conf_DefaultUserModes, "");
-#ifdef NGIRCD_DISABLE_RESOLVER
+#if defined(__ELKS__)
 	Conf_DNS = false;
 #else
 	Conf_DNS = true;
@@ -1688,16 +1683,8 @@ Handle_OPTIONS(const char *File, int Line, char *Var, char *Arg)
 		return;
 	}
 	if (strcasecmp(Var, "DNS") == 0) {
-#ifdef NGIRCD_DISABLE_RESOLVER
-		Config_Error(LOG_WARNING,
-			     "%s, line %d: DNS lookups are disabled on this build; ignoring \"DNS\" option.",
-			     File, Line);
-		Conf_DNS = false;
-		return;
-#else
 		Conf_DNS = Check_ArgIsTrue(Arg);
 		return;
-#endif
 	}
 	if (strcasecmp(Var, "Ident") == 0) {
 		Conf_Ident = Check_ArgIsTrue(Arg);
@@ -2128,9 +2115,7 @@ Validate_Config(bool Configtest, bool Rehash)
 	/* Validate configuration settings. */
 
 	int i, servers, servers_once;
-#ifndef NGIRCD_DISABLE_RESOLVER
 	struct hostent *h;
-#endif
 	bool config_valid = true;
 	char *ptr;
 #ifdef HAVE_SETRLIMIT
@@ -2150,15 +2135,13 @@ Validate_Config(bool Configtest, bool Rehash)
 		 * host name. Note: the IRC server name MUST contain
 		 * at least one dot, so the "node name" is not sufficient! */
 		gethostname(Conf_ServerName, sizeof(Conf_ServerName));
-#ifndef NGIRCD_DISABLE_RESOLVER
 		if (Conf_DNS) {
 			/* Try to get a proper host name ... */
 			h = gethostbyname(Conf_ServerName);
-			if (h && h->h_name)
+			if (h)
 				strlcpy(Conf_ServerName, h->h_name,
 					sizeof(Conf_ServerName));
 		}
-#endif
 		if (!strchr(Conf_ServerName, '.')) {
 			/* (Still) No dot in the name! */
 			strlcat(Conf_ServerName, ".host",

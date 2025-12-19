@@ -43,7 +43,10 @@
 static int signalpipe[2];
 
 static const int signals_catch[] = {
-       SIGINT, SIGQUIT, SIGTERM, SIGHUP, SIGCHLD, SIGUSR1, SIGUSR2
+       SIGINT, SIGQUIT, SIGTERM, SIGHUP, SIGCHLD, SIGUSR1,
+#if defined(SIGUSR2) && SIGUSR2 != 0
+       SIGUSR2,
+#endif
 };
 
 
@@ -74,10 +77,8 @@ Signal_Block(int sig)
 	sigaddset(&set, sig);
 
 	sigprocmask(SIG_BLOCK, &set, NULL);
-#elif !defined(NGIRCD_ELKS)
-	sigblock(sig);
 #else
-	(void)sig;
+	sigblock(sig);
 #endif
 }
 
@@ -91,11 +92,9 @@ Signal_Unblock(int sig)
 	sigaddset(&set, sig);
 
 	sigprocmask(SIG_UNBLOCK, &set, NULL);
-#elif !defined(NGIRCD_ELKS)
+#else
 	int old = sigblock(0) & ~sig;
 	sigsetmask(old);
-#else
-	(void)sig;
 #endif
 }
 

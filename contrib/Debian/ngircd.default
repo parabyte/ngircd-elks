@@ -1,7 +1,0 @@
-#
-# Defaults for the ngIRCd daemon
-#
-
-# Parameters to pass to the ngircd daemon on startup, see ngircd(8) for
-# possible options (default: empty).
-PARAMS=""

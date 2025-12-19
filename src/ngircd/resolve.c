@@ -42,24 +42,6 @@
 
 #include "resolve.h"
 
-#ifdef NGIRCD_DISABLE_RESOLVER
-
-GLOBAL bool
-Resolve_Addr_Ident(UNUSED PROC_STAT *s, UNUSED const ng_ipaddr_t *Addr,
-		   UNUSED int identsock, UNUSED void (*cbfunc)(int, short))
-{
-	return false;
-}
-
-GLOBAL bool
-Resolve_Name(UNUSED PROC_STAT *s, UNUSED const char *Host,
-	     UNUSED void (*cbfunc)(int, short))
-{
-	return false;
-}
-
-#else
-
 static void Do_ResolveAddr_Ident PARAMS(( const ng_ipaddr_t *Addr, int Sock, int w_fd ));
 static void Do_ResolveName PARAMS(( const char *Host, int w_fd ));
 
@@ -466,8 +448,6 @@ Do_ResolveName( const char *Host, int w_fd )
 
 	array_free(&IpAddrs);
 } /* Do_ResolveName */
-
-#endif /* NGIRCD_DISABLE_RESOLVER */
 
 
 /* -eof- */

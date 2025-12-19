@@ -16,7 +16,6 @@ EXTRA_DIST = Makefile.ng
 noinst_LIBRARIES = libngportab.a
 
 libngportab_a_SOURCES = \
-	elks-stubs.c \
 	strdup.c \
 	strlcpy.c \
 	strndup.c \

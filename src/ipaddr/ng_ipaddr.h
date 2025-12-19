@@ -23,13 +23,6 @@
 # define PF_INET AF_INET
 #endif
 
-#ifndef HAVE_GETADDRINFO
-struct in_addr;
-extern int inet_aton(const char *, struct in_addr *);
-extern unsigned long inet_addr(const char *);
-extern char *inet_ntoa(struct in_addr);
-#endif
-
 
 #ifdef WANT_IPV6
 #define NG_INET_ADDRSTRLEN	INET6_ADDRSTRLEN

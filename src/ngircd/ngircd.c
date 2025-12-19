@@ -78,14 +78,24 @@ main(int argc, const char *argv[])
 	int i;
 	size_t n;
 
+#ifdef __ELKS__
+	puts("DBG:1");
+#endif
+
 #if defined(DEBUG) && defined(HAVE_MTRACE)
 	/* enable GNU libc memory tracing when running in debug mode
 	 * and functionality available */
 	mtrace();
 #endif
 
+#ifdef __ELKS__
+	puts("DBG:2");
+#endif
 	umask(0077);
 
+#ifdef __ELKS__
+	puts("DBG:3");
+#endif
 	NGIRCd_SignalQuit = NGIRCd_SignalRestart = false;
 	NGIRCd_Passive = false;
 	NGIRCd_Debug = false;
@@ -93,6 +103,9 @@ main(int argc, const char *argv[])
 	NGIRCd_Sniffer = false;
 #endif
 
+#ifdef __ELKS__
+	puts("DBG:4");
+#endif
 	Fill_Version();
 
 	/* parse conmmand line */
@@ -244,27 +257,54 @@ main(int argc, const char *argv[])
 	}
 
 	while (!NGIRCd_SignalQuit) {
+#ifdef __ELKS__
+		puts("DBG:5 loop");
+#endif
 		/* Initialize global variables */
 		NGIRCd_Start = time(NULL);
+#ifdef __ELKS__
+		puts("DBG:6 time");
+#endif
 		(void)strftime(NGIRCd_StartStr, 64,
 			       "%a %b %d %Y at %H:%M:%S (%Z)",
 			       localtime(&NGIRCd_Start));
 
+#ifdef __ELKS__
+		puts("DBG:7 strftime");
+#endif
 		NGIRCd_SignalRestart = false;
 		NGIRCd_SignalQuit = false;
 
+#ifdef __ELKS__
+		puts("DBG:8 Log_Init");
+#endif
 		Log_Init(!NGIRCd_NoSyslog);
+#ifdef __ELKS__
+		puts("DBG:9 Random_Init");
+#endif
 		Random_Init();
+#ifdef __ELKS__
+		puts("DBG:10 Conf_Init");
+#endif
 		Conf_Init();
+#ifdef __ELKS__
+		puts("DBG:11 Log_ReInit");
+#endif
 		Log_ReInit();
 
 		/* Initialize the "main program":
 		 * chroot environment, user and group ID, ... */
+#ifdef __ELKS__
+		puts("DBG:12 NGIRCd_Init");
+#endif
 		if (!NGIRCd_Init(NGIRCd_NoDaemon)) {
 			Log(LOG_ALERT, "Fatal: Initialization failed, exiting!");
 			exit(1);
 		}
 
+#ifdef __ELKS__
+		puts("DBG:13 io_library_init");
+#endif
 		if (!io_library_init(CONNECTION_POOL)) {
 			Log(LOG_ALERT,
 			    "Fatal: Could not initialize IO routines: %s",
@@ -561,32 +601,13 @@ Setup_FDStreams(int fd)
 } /* Setup_FDStreams */
 
 
-#if !defined(SINGLE_USER_OS)
 
-/**
- * Get user and group ID of unprivileged "nobody" user.
- *
- * @param uid	User ID
- * @param gid	Group ID
- * @return	true on success.
- */
 static bool
 NGIRCd_getNobodyID(uid_t *uid, gid_t *gid )
 {
 	struct passwd *pwd;
 
-#ifdef __CYGWIN__
-	/* Cygwin kludge.
-	 * It can return EINVAL instead of EPERM
-	 * so, if we are already unprivileged,
-	 * use id of current user.
-	 */
-	if (geteuid() && getuid()) {
-		*uid = getuid();
-		*gid = getgid();
-		return true;
-	}
-#endif
+
 
 	pwd = getpwnam("nobody");
 	if (!pwd)
@@ -602,7 +623,6 @@ NGIRCd_getNobodyID(uid_t *uid, gid_t *gid )
 	return true;
 } /* NGIRCd_getNobodyID */
 
-#endif
 
 
 #ifdef HAVE_ARC4RANDOM

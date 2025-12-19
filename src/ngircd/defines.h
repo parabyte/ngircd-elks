@@ -39,13 +39,21 @@
 #define LINE_LEN 1024
 
 /** Max. length of a log message. */
+#if defined(__ELKS__)
+#define MAX_LOG_MSG_LEN 256
+#else
 #define MAX_LOG_MSG_LEN 1024
+#endif
 
 /** Max. length of file name. */
 #define FNAME_LEN 256
 
 /** Max. length of fully qualified host names (e. g. "abc.domain.tld"). */
+#if defined(__ELKS__)
+#define HOST_LEN 64
+#else
 #define HOST_LEN 256
+#endif
 
 /** Max. length of random salt */
 #define RANDOM_SALT_LEN 32
@@ -53,13 +61,25 @@
 /* Size of structures */
 
 /** Max. count of configurable servers. */
+#if defined(__ELKS__)
+#define MAX_SERVERS 4
+#else
 #define MAX_SERVERS 64
+#endif
 
 /** Max. number of WHOWAS list items that can be stored. */
+#if defined(__ELKS__)
 #define MAX_WHOWAS 8
+#else
+#define MAX_WHOWAS 64
+#endif
 
 /** Size of default connection pool. */
+#if defined(__ELKS__)
+#define CONNECTION_POOL 32
+#else
 #define CONNECTION_POOL 100
+#endif
 
 /** Size of buffer for PAM service name. */
 #define MAX_PAM_SERVICE_NAME_LEN 64
@@ -157,18 +177,22 @@
 #define READBUFFER_LEN 2048
 
 /** Size that triggers write buffer flushing if more space is needed. */
+#if defined(__ELKS__)
+#define WRITEBUFFER_FLUSH_LEN 512
+#else
 #define WRITEBUFFER_FLUSH_LEN 4096
+#endif
 
 /** Maximum size of the write buffer of a connection in bytes. */
-#ifdef NGIRCD_ELKS
-#define WRITEBUFFER_MAX_LEN 8192
+#if defined(__ELKS__)
+#define WRITEBUFFER_MAX_LEN 2048
 #else
 #define WRITEBUFFER_MAX_LEN 32768
 #endif
 
 /** Maximum size of the write buffer of a server link connection in bytes. */
-#ifdef NGIRCD_ELKS
-#define WRITEBUFFER_SLINK_LEN 16384
+#if defined(__ELKS__)
+#define WRITEBUFFER_SLINK_LEN 4096
 #else
 #define WRITEBUFFER_SLINK_LEN 65536
 #endif

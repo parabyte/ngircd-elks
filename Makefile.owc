@@ -1,0 +1,103 @@
+# Makefile for ngIRCd on ELKS using OpenWatcom (large model, OS/2 NE)
+
+ifndef TOPDIR
+$(error TOPDIR is not defined)
+endif
+
+NGIRCD_DIR = $(TOPDIR)/ngircd
+
+CC = owcc
+LD = owcc
+MODEL = l
+
+INCLUDES = -I$(TOPDIR)/libc/include -I$(TOPDIR)/elks/include
+INCLUDES += -I$(TOPDIR)/libc/include/watcom
+INCLUDES += -I$(NGIRCD_DIR)/src -I$(NGIRCD_DIR)/src/portab
+INCLUDES += -I$(NGIRCD_DIR)/src/tool -I$(NGIRCD_DIR)/src/ipaddr
+INCLUDES += -I$(NGIRCD_DIR)/src/ngircd
+
+DEFINES = -D__ELKS__ -DELKS
+
+CFLAGS = -Os -bnone -mcmodel=$(MODEL) -march=i86 -std=c99 -fsigned-char -msoft-float
+CFLAGS += -fno-stack-check -fnostdlib -Wc,-zev -Wc,-zls -Wc,-x -Wc,-wcd=303 -Wc,-zc
+CFLAGS += -Wc,-zt0
+CFLAGS += -Wall -Wextra $(INCLUDES) $(DEFINES)
+
+LDFLAGS = -bos2 -s
+LDFLAGS += -Wl,option -Wl,start=_start
+LDFLAGS += -Wl,option -Wl,dosseg
+LDFLAGS += -Wl,option -Wl,nodefaultlibs
+LDFLAGS += -Wl,option -Wl,stack=0x2000
+LDFLAGS += -Wl,option -Wl,heapsize=0x3000
+
+LDLIBS = -Wl,library -Wl,$(TOPDIR)/libc/libc$(MODEL).lib
+
+PROG = ngircd.os2
+
+SRCS = \
+	$(NGIRCD_DIR)/src/portab/compat.c \
+	$(NGIRCD_DIR)/src/portab/strdup.c \
+	$(NGIRCD_DIR)/src/portab/strlcpy.c \
+	$(NGIRCD_DIR)/src/portab/strndup.c \
+	$(NGIRCD_DIR)/src/portab/strtok_r.c \
+	$(NGIRCD_DIR)/src/portab/vsnprintf.c \
+	$(NGIRCD_DIR)/src/portab/waitpid.c \
+	$(NGIRCD_DIR)/src/tool/tool.c \
+	$(NGIRCD_DIR)/src/ipaddr/ng_ipaddr.c \
+	$(NGIRCD_DIR)/src/ngircd/ngircd.c \
+	$(NGIRCD_DIR)/src/ngircd/array.c \
+	$(NGIRCD_DIR)/src/ngircd/channel.c \
+	$(NGIRCD_DIR)/src/ngircd/class.c \
+	$(NGIRCD_DIR)/src/ngircd/client.c \
+	$(NGIRCD_DIR)/src/ngircd/client-cap.c \
+	$(NGIRCD_DIR)/src/ngircd/conf.c \
+	$(NGIRCD_DIR)/src/ngircd/conn.c \
+	$(NGIRCD_DIR)/src/ngircd/conn-encoding.c \
+	$(NGIRCD_DIR)/src/ngircd/conn-func.c \
+	$(NGIRCD_DIR)/src/ngircd/conn-ssl.c \
+	$(NGIRCD_DIR)/src/ngircd/conn-zip.c \
+	$(NGIRCD_DIR)/src/ngircd/hash.c \
+	$(NGIRCD_DIR)/src/ngircd/io.c \
+	$(NGIRCD_DIR)/src/ngircd/irc.c \
+	$(NGIRCD_DIR)/src/ngircd/irc-cap.c \
+	$(NGIRCD_DIR)/src/ngircd/irc-channel.c \
+	$(NGIRCD_DIR)/src/ngircd/irc-encoding.c \
+	$(NGIRCD_DIR)/src/ngircd/irc-info.c \
+	$(NGIRCD_DIR)/src/ngircd/irc-login.c \
+	$(NGIRCD_DIR)/src/ngircd/irc-metadata.c \
+	$(NGIRCD_DIR)/src/ngircd/irc-mode.c \
+	$(NGIRCD_DIR)/src/ngircd/irc-op.c \
+	$(NGIRCD_DIR)/src/ngircd/irc-oper.c \
+	$(NGIRCD_DIR)/src/ngircd/irc-server.c \
+	$(NGIRCD_DIR)/src/ngircd/irc-write.c \
+	$(NGIRCD_DIR)/src/ngircd/lists.c \
+	$(NGIRCD_DIR)/src/ngircd/log.c \
+	$(NGIRCD_DIR)/src/ngircd/login.c \
+	$(NGIRCD_DIR)/src/ngircd/match.c \
+	$(NGIRCD_DIR)/src/ngircd/numeric.c \
+	$(NGIRCD_DIR)/src/ngircd/op.c \
+	$(NGIRCD_DIR)/src/ngircd/pam.c \
+	$(NGIRCD_DIR)/src/ngircd/parse.c \
+	$(NGIRCD_DIR)/src/ngircd/proc.c \
+	$(NGIRCD_DIR)/src/ngircd/resolve.c \
+	$(NGIRCD_DIR)/src/ngircd/sighandlers.c
+
+OBJS = $(SRCS:.c=.obj)
+
+INSTALL ?= install -c
+RM ?= rm -f
+
+all: $(PROG)
+
+$(PROG): $(OBJS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+%.obj: %.c
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+install: $(PROG)
+	$(INSTALL) -d $(DESTDIR)/sbin
+	$(INSTALL) $(PROG) $(DESTDIR)/sbin/ngircd
+
+clean:
+	$(RM) $(OBJS) $(PROG)

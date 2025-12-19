@@ -10,7 +10,6 @@
  */
 
 #include "portab.h"
-#include <ctype.h>
 
 /**
  * @file
@@ -88,10 +87,6 @@
 #include <stdlib.h>
 #endif
 
-#ifdef NGIRCD_ELKS
-#define NGIRCD_SNPRINTF_NO_FLOAT 1
-#endif
-
 #if defined(HAVE_SNPRINTF) && defined(HAVE_VSNPRINTF)
 /* only include stdio.h if we are not re-defining snprintf or vsnprintf */
 #include <stdio.h>
@@ -118,10 +113,8 @@ static void fmtstr PARAMS((char *buffer, size_t *currlen, size_t maxlen,
 			   char *value, int flags, int min, int max));
 static void fmtint PARAMS((char *buffer, size_t *currlen, size_t maxlen,
 			   long value, int base, int min, int max, int flags));
-#ifndef NGIRCD_SNPRINTF_NO_FLOAT
 static void fmtfp PARAMS((char *buffer, size_t *currlen, size_t maxlen,
 			  LDOUBLE fvalue, int min, int max, int flags));
-#endif
 static void dopr_outch PARAMS((char *buffer, size_t *currlen, size_t maxlen,
 			       char c));
 
@@ -164,9 +157,7 @@ dopr(char *buffer, size_t maxlen, const char *format, va_list args)
 {
 	char ch;
 	LLONG value;
-#ifndef NGIRCD_SNPRINTF_NO_FLOAT
 	LDOUBLE fvalue;
-#endif
 	char *strvalue;
 	int min;
 	int max;
@@ -328,7 +319,6 @@ dopr(char *buffer, size_t maxlen, const char *format, va_list args)
 					value = (long)va_arg (args, unsigned int);
 				fmtint (buffer, &currlen, maxlen, value, 16, min, max, flags);
 				break;
-#ifndef NGIRCD_SNPRINTF_NO_FLOAT
 			case 'f':
 				if (cflags == DP_C_LDOUBLE)
 					fvalue = va_arg (args, LDOUBLE);
@@ -344,7 +334,6 @@ dopr(char *buffer, size_t maxlen, const char *format, va_list args)
 					fvalue = va_arg (args, LDOUBLE);
 				else
 					fvalue = va_arg (args, double);
-				fmtfp (buffer, &currlen, maxlen, fvalue, min, max, flags);
 				break;
 			case 'G':
 				flags |= DP_F_UP;
@@ -353,18 +342,7 @@ dopr(char *buffer, size_t maxlen, const char *format, va_list args)
 					fvalue = va_arg (args, LDOUBLE);
 				else
 					fvalue = va_arg (args, double);
-				fmtfp (buffer, &currlen, maxlen, fvalue, min, max, flags);
 				break;
-#else
-			case 'f':
-			case 'F':
-			case 'E':
-			case 'e':
-			case 'G':
-			case 'g':
-				fmtstr(buffer, &currlen, maxlen, "0", flags, min, max);
-				break;
-#endif
 			case 'c':
 				dopr_outch (buffer, &currlen, maxlen, va_arg (args, int));
 				break;
@@ -556,7 +534,6 @@ fmtint(char *buffer, size_t *currlen, size_t maxlen, long value, int base,
 	}
 }
 
-#ifndef NGIRCD_SNPRINTF_NO_FLOAT
 static LDOUBLE
 abs_val(LDOUBLE value)
 {
@@ -771,12 +748,11 @@ fmtfp (char *buffer, size_t *currlen, size_t maxlen, LDOUBLE fvalue,
 		--zpadlen;
 	}
 
-while (padlen < 0) {
-	dopr_outch (buffer, currlen, maxlen, ' ');
-	++padlen;
+	while (padlen < 0) {
+		dopr_outch (buffer, currlen, maxlen, ' ');
+		++padlen;
+	}
 }
-}
-#endif /* !NGIRCD_SNPRINTF_NO_FLOAT */
 
 static void
 dopr_outch(char *buffer, size_t *currlen, size_t maxlen, char c)

@@ -10,7 +10,7 @@
  * SSL related definitions
  */
 
-#if defined(HAVE_LIBSSL) && !defined(NGIRCD_DISABLE_SSL)
+#ifdef HAVE_LIBSSL
 #define SSL_SUPPORT
 #include <openssl/ssl.h>
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -18,10 +18,8 @@
 #define OPENSSL_VERSION SSLEAY_VERSION
 #endif
 #endif
-#if defined(HAVE_LIBGNUTLS) && !defined(NGIRCD_DISABLE_SSL)
-#ifndef SSL_SUPPORT
+#ifdef HAVE_LIBGNUTLS
 #define SSL_SUPPORT
-#endif
 #include <gnutls/gnutls.h>
 #ifndef LIBGNUTLS_VERSION_MAJOR
 #define gnutls_certificate_credentials_t gnutls_certificate_credentials

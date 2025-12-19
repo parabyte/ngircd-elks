@@ -40,10 +40,6 @@
 #include <time.h>
 #include <netinet/in.h>
 
-#ifdef __WATCOMC__
-extern int getsockopt(int, int, int, void *, unsigned int *);
-#endif
-
 #ifdef HAVE_NETINET_IP_H
 # ifdef HAVE_NETINET_IN_SYSTM_H
 #  include <netinet/in_systm.h>
@@ -99,11 +95,6 @@ static int NewListener PARAMS(( const char *listen_addr, UINT16 Port ));
 static void Account_Connection PARAMS((void));
 static void Throttle_Connection PARAMS((const CONN_ID Idx, CLIENT *Client,
 					const int Reason, unsigned int Value));
-
-static unsigned long long bytes_to_tenths_kb(size_t bytes)
-{
-	return (((unsigned long long)bytes) * 10ULL + 512ULL) / 1024ULL;
-}
 
 static array My_Listeners;
 static array My_ConnArray;
@@ -1046,16 +1037,12 @@ Conn_Close(CONN_ID Idx, const char *LogMsg, const char *FwdMsg, bool InformClien
 	/* Close connection. Open pipes of asynchronous resolver
 	 * sub-processes are closed down. */
 
-    CLIENT *c;
-    UINT16 port;
-    unsigned long in_whole, out_whole;
-    unsigned int in_frac, out_frac;
-    unsigned long long in_tenths, out_tenths;
+	CLIENT *c;
+	double in_k, out_k;
+	UINT16 port;
 #ifdef ZLIB
-    unsigned long in_z_whole, out_z_whole;
-    unsigned int in_z_frac, out_z_frac;
-    unsigned long long in_z_tenths, out_z_tenths;
-    int in_p, out_p;
+	double in_z_k, out_z_k;
+	int in_p, out_p;
 #endif
 
 	assert( Idx > NONE );
@@ -1079,12 +1066,6 @@ Conn_Close(CONN_ID Idx, const char *LogMsg, const char *FwdMsg, bool InformClien
 
 	/* Search client, if any */
 	c = Conn_GetClient( Idx );
-	in_tenths = bytes_to_tenths_kb(My_Connections[Idx].bytes_in);
-	out_tenths = bytes_to_tenths_kb(My_Connections[Idx].bytes_out);
-	in_whole = (unsigned long)(in_tenths / 10ULL);
-	in_frac = (unsigned int)(in_tenths % 10ULL);
-	out_whole = (unsigned long)(out_tenths / 10ULL);
-	out_frac = (unsigned int)(out_tenths % 10ULL);
 
 	/* Should the client be informed? */
 	if (InformClient) {
@@ -1092,10 +1073,11 @@ Conn_Close(CONN_ID Idx, const char *LogMsg, const char *FwdMsg, bool InformClien
 		/* Send statistics to client if registered as user: */
 		if ((c != NULL) && (Client_Type(c) == CLIENT_USER)) {
 			Conn_WriteStr( Idx,
-			 ":%s NOTICE %s :%sConnection statistics: client %lu.%01u kb, server %lu.%01u kb.",
+			 ":%s NOTICE %s :%sConnection statistics: client %.1f kb, server %.1f kb.",
 			 Client_ID(Client_ThisServer()), Client_ID(c),
 			 NOTICE_TXTPREFIX,
-			 in_whole, in_frac, out_whole, out_frac);
+			 (double)My_Connections[Idx].bytes_in / 1024,
+			 (double)My_Connections[Idx].bytes_out / 1024);
 		}
 #endif
 		/* Send ERROR to client (see RFC 2812, section 3.1.7) */
@@ -1138,43 +1120,34 @@ Conn_Close(CONN_ID Idx, const char *LogMsg, const char *FwdMsg, bool InformClien
 		Client_Destroy(c, LogMsg, FwdMsg, true);
 
 	/* Calculate statistics and log information */
+	in_k = (double)My_Connections[Idx].bytes_in / 1024;
+	out_k = (double)My_Connections[Idx].bytes_out / 1024;
 #ifdef ZLIB
 	if (Conn_OPTION_ISSET( &My_Connections[Idx], CONN_ZIP)) {
-		in_z_tenths = bytes_to_tenths_kb(My_Connections[Idx].zip.bytes_in);
-		out_z_tenths = bytes_to_tenths_kb(My_Connections[Idx].zip.bytes_out);
-		if (in_z_tenths == 0 && in_tenths != 0)
-			in_z_tenths = in_tenths;
-		if (out_z_tenths == 0 && out_tenths != 0)
-			out_z_tenths = out_tenths;
-		in_z_whole = (unsigned long)(in_z_tenths / 10ULL);
-		in_z_frac = (unsigned int)(in_z_tenths % 10ULL);
-		out_z_whole = (unsigned long)(out_z_tenths / 10ULL);
-		out_z_frac = (unsigned int)(out_z_tenths % 10ULL);
-		if (My_Connections[Idx].zip.bytes_in > 0) {
-			unsigned long long zip_in_bytes = My_Connections[Idx].zip.bytes_in;
-			in_p = (int)((My_Connections[Idx].bytes_in * 100ULL + zip_in_bytes / 2ULL) / zip_in_bytes);
-		} else {
-			in_p = 100;
-		}
-		if (My_Connections[Idx].zip.bytes_out > 0) {
-			unsigned long long zip_out_bytes = My_Connections[Idx].zip.bytes_out;
-			out_p = (int)((My_Connections[Idx].bytes_out * 100ULL + zip_out_bytes / 2ULL) / zip_out_bytes);
-		} else {
-			out_p = 100;
-		}
+		in_z_k = (double)My_Connections[Idx].zip.bytes_in / 1024;
+		out_z_k = (double)My_Connections[Idx].zip.bytes_out / 1024;
+		/* Make sure that no division by zero can occur during
+		 * the calculation of in_p and out_p: in_z_k and out_z_k
+		 * are non-zero, that's guaranteed by the protocol until
+		 * compression can be enabled. */
+		if (in_z_k <= 0)
+			in_z_k = in_k;
+		if (out_z_k <= 0)
+			out_z_k = out_k;
+		in_p = (int)(( in_k * 100 ) / in_z_k );
+		out_p = (int)(( out_k * 100 ) / out_z_k );
 		Log(LOG_INFO,
-		    "Connection %d with \"%s:%d\" closed (in: %lu.%01luk/%lu.%01luk/%d%%, out: %lu.%01luk/%lu.%01luk/%d%%).",
+		    "Connection %d with \"%s:%d\" closed (in: %.1fk/%.1fk/%d%%, out: %.1fk/%.1fk/%d%%).",
 		    Idx, My_Connections[Idx].host, port,
-		    in_whole, in_frac, in_z_whole, in_z_frac, in_p,
-		    out_whole, out_frac, out_z_whole, out_z_frac, out_p);
+		    in_k, in_z_k, in_p, out_k, out_z_k, out_p);
 	}
 	else
 #endif
 	{
 		Log(LOG_INFO,
-		    "Connection %d with \"%s:%d\" closed (in: %lu.%01luk, out: %lu.%01luk).",
+		    "Connection %d with \"%s:%d\" closed (in: %.1fk, out: %.1fk).",
 		    Idx, My_Connections[Idx].host, port,
-		    in_whole, in_frac, out_whole, out_frac);
+		    in_k, out_k);
 	}
 
 	/* Servers: Modify time of next connect attempt? */
@@ -1562,13 +1535,27 @@ Conn_StartLogin(CONN_ID Idx)
 			return;
 	}
 
-#ifndef NGIRCD_DISABLE_RESOLVER
+#ifdef IDENTAUTH
+	if (!Conf_DNS && !Conf_Ident) {
+		CLIENT *c = Conn_GetClient(Idx);
+
+		if (c && Client_Type(c) == CLIENT_UNKNOWN)
+			Class_HandleServerBans(c);
+		return;
+	}
+#else
+	if (!Conf_DNS) {
+		CLIENT *c = Conn_GetClient(Idx);
+
+		if (c && Client_Type(c) == CLIENT_UNKNOWN)
+			Class_HandleServerBans(c);
+		return;
+	}
+#endif
+
 	Resolve_Addr_Ident(&My_Connections[Idx].proc_stat,
 			   &My_Connections[Idx].addr,
 			   ident_sock, cb_Read_Resolver_Result);
-#else
-	(void)ident_sock;
-#endif
 }
 
 /**
@@ -2026,24 +2013,9 @@ Check_Servers(void)
 		assert(Proc_GetPipeFd(&Conf_Server[i].res_stat) < 0);
 
 		/* Start resolver subprocess ... */
-#ifdef NGIRCD_DISABLE_RESOLVER
-		memset(&Conf_Server[i].dst_addr, 0,
-		       sizeof(Conf_Server[i].dst_addr));
-		if (!ng_ipaddr_init(&Conf_Server[i].dst_addr[0],
-				    Conf_Server[i].host,
-				    (UINT16)Conf_Server[i].port)) {
-			Log(LOG_WARNING,
-			    "Server \"%s\": Host \"%s\" is not a numeric address; skipping connection attempt.",
-			    Conf_Server[i].name, Conf_Server[i].host);
-			Conf_Server[i].conn_id = NONE;
-			continue;
-		}
-		New_Server(i, &Conf_Server[i].dst_addr[0]);
-#else
 		if (!Resolve_Name(&Conf_Server[i].res_stat, Conf_Server[i].host,
 				  cb_Connect_to_Server))
 			Conf_Server[i].conn_id = NONE;
-#endif
 	}
 } /* Check_Servers */
 

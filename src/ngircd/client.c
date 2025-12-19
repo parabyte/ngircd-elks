@@ -25,12 +25,7 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
-#ifdef __WATCOMC__
-extern int gethostname(char *, int);
-#endif
-#ifndef NGIRCD_DISABLE_RESOLVER
 #include <netdb.h>
-#endif
 
 #include "conn.h"
 #include "ngircd.h"
@@ -76,6 +71,8 @@ static void cb_introduceClient PARAMS((CLIENT *Client, CLIENT *Prefix,
 GLOBAL void
 Client_Init( void )
 {
+	struct hostent *h;
+
 	This_Server = New_Client_Struct( );
 	if( ! This_Server )
 	{
@@ -92,18 +89,11 @@ Client_Init( void )
 	This_Server->mytoken = 1;
 	This_Server->hops = 0;
 
-#ifndef NGIRCD_DISABLE_RESOLVER
 	gethostname( This_Server->host, CLIENT_HOST_LEN );
 	if (Conf_DNS) {
-		struct hostent *h;
-
 		h = gethostbyname( This_Server->host );
-		if (h != NULL && h->h_name != NULL)
-			strlcpy(This_Server->host, h->h_name, sizeof(This_Server->host));
+		if (h) strlcpy(This_Server->host, h->h_name, sizeof(This_Server->host));
 	}
-#else
-	strlcpy(This_Server->host, Conf_ServerName, sizeof(This_Server->host));
-#endif
 	Client_SetID( This_Server, Conf_ServerName );
 	Client_SetInfo( This_Server, Conf_ServerInfo );
 

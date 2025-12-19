@@ -68,7 +68,11 @@ Log_Message(int Level, const char *msg)
 GLOBAL void
 Log_Init(bool Syslog_Mode)
 {
+#ifdef SYSLOG
 	Use_Syslog = Syslog_Mode;
+#else
+	Use_Syslog = false;
+#endif
 
 #ifdef SYSLOG
 #ifndef LOG_CONS     /* Kludge: mips-dec-ultrix4.5 has no LOG_CONS */
