@@ -88,6 +88,7 @@ static unsigned int Handle_Buffer PARAMS(( CONN_ID Idx ));
 static void Check_Connections PARAMS(( void ));
 static void Check_Servers PARAMS(( void ));
 static void Init_Conn_Struct PARAMS(( CONN_ID Idx ));
+static void Set_Socket_ReuseAddr PARAMS(( int Sock ));
 static bool Init_Socket PARAMS(( int Sock ));
 static void New_Server PARAMS(( int Server, ng_ipaddr_t *dest ));
 static void Simple_Message PARAMS(( int Sock, const char *Msg ));
@@ -212,10 +213,11 @@ cb_connserver(int sock, UNUSED short what)
  			Log(LOG_CRIT, "getsockopt (connection %d): %s!",
  			    idx, strerror(errno));
  		else
- 			Log(LOG_CRIT,
- 			    "Can't connect socket to \"%s:%d\" (connection %d): %s!",
-			    My_Connections[idx].host, Conf_Server[server].port,
- 			    idx, strerror(err));
+			Log(LOG_CRIT,
+			    "Can't connect socket to \"%s:%u\" (connection %d): %s!",
+			    My_Connections[idx].host,
+			    (unsigned)Conf_Server[server].port, idx,
+			    strerror(err));
 
 		Conn_Close(idx, "Can't connect", NULL, false);
 
@@ -256,9 +258,9 @@ static void
 server_login(CONN_ID idx)
 {
 	Log(LOG_INFO,
-	    "Connection %d (socket %d) with \"%s:%d\" established. Now logging in ...",
+	    "Connection %d (socket %d) with \"%s:%u\" established. Now logging in ...",
 	    idx, My_Connections[idx].sock, My_Connections[idx].host,
-	    Conf_Server[Conf_GetServer(idx)].port);
+	    (unsigned)Conf_Server[Conf_GetServer(idx)].port);
 
 	io_event_setcb( My_Connections[idx].sock, cb_clientserver);
 	io_event_add( My_Connections[idx].sock, IO_WANTREAD|IO_WANTWRITE);
@@ -471,8 +473,9 @@ Conn_InitListeners( void )
 				continue;
 			}
 			Log(LOG_INFO,
-			    "Initialized socket %d from systemd(8): %s:%d.", fd,
-			    ng_ipaddr_tostr(&addr), ng_ipaddr_getport(&addr));
+			    "Initialized socket %d from systemd(8): %s:%u.", fd,
+			    ng_ipaddr_tostr(&addr),
+			    (unsigned)ng_ipaddr_getport(&addr));
 			created++;
 		}
 		return created;
@@ -623,14 +626,15 @@ NewListener(const char *listen_addr, UINT16 Port)
 		return -1;
 	}
 
+	Set_Socket_ReuseAddr(sock);
 	set_v6_only(af, sock);
 
 	if (!Init_Socket(sock))
 		return -1;
 
 	if (bind(sock, (struct sockaddr *)&addr, ng_ipaddr_salen(&addr)) != 0) {
-		Log(LOG_CRIT, "Can't bind socket to address %s:%d - %s!",
-		    ng_ipaddr_tostr(&addr), Port, strerror(errno));
+		Log(LOG_CRIT, "Can't bind socket to address %s:%u - %s!",
+		    ng_ipaddr_tostr(&addr), (unsigned)Port, strerror(errno));
 		close(sock);
 		return -1;
 	}
@@ -649,8 +653,8 @@ NewListener(const char *listen_addr, UINT16 Port)
 		return -1;
 	}
 
-	Log(LOG_INFO, "Now listening on [%s]:%d (socket %d).",
-	    ng_ipaddr_tostr(&addr), Port, sock);
+	Log(LOG_INFO, "Now listening on [%s]:%u (socket %d).",
+	    ng_ipaddr_tostr(&addr), (unsigned)Port, sock);
 	return sock;
 } /* NewListener */
 
@@ -1061,8 +1065,9 @@ Conn_Close(CONN_ID Idx, const char *LogMsg, const char *FwdMsg, bool InformClien
 	Conn_OPTION_ADD( &My_Connections[Idx], CONN_ISCLOSING );
 
 	port = ng_ipaddr_getport(&My_Connections[Idx].addr);
-	Log(LOG_INFO, "Shutting down connection %d (%s) with \"%s:%d\" ...", Idx,
-	    LogMsg ? LogMsg : FwdMsg, My_Connections[Idx].host, port);
+	Log(LOG_INFO, "Shutting down connection %d (%s) with \"%s:%u\" ...", Idx,
+	    LogMsg ? LogMsg : FwdMsg, My_Connections[Idx].host,
+	    (unsigned)port);
 
 	/* Search client, if any */
 	c = Conn_GetClient( Idx );
@@ -1107,9 +1112,9 @@ Conn_Close(CONN_ID Idx, const char *LogMsg, const char *FwdMsg, bool InformClien
 	if (! io_close(My_Connections[Idx].sock)) {
 		/* Oops, we can't close the socket!? This is ... ugly! */
 		Log(LOG_CRIT,
-		    "Error closing connection %d (socket %d) with %s:%d - %s! (ignored)",
+		    "Error closing connection %d (socket %d) with %s:%u - %s! (ignored)",
 		    Idx, My_Connections[Idx].sock, My_Connections[Idx].host,
-		    port, strerror(errno));
+		    (unsigned)port, strerror(errno));
 	}
 
 	/* Mark socket as invalid: */
@@ -1137,16 +1142,16 @@ Conn_Close(CONN_ID Idx, const char *LogMsg, const char *FwdMsg, bool InformClien
 		in_p = (int)(( in_k * 100 ) / in_z_k );
 		out_p = (int)(( out_k * 100 ) / out_z_k );
 		Log(LOG_INFO,
-		    "Connection %d with \"%s:%d\" closed (in: %.1fk/%.1fk/%d%%, out: %.1fk/%.1fk/%d%%).",
-		    Idx, My_Connections[Idx].host, port,
+		    "Connection %d with \"%s:%u\" closed (in: %.1fk/%.1fk/%d%%, out: %.1fk/%.1fk/%d%%).",
+		    Idx, My_Connections[Idx].host, (unsigned)port,
 		    in_k, in_z_k, in_p, out_k, out_z_k, out_p);
 	}
 	else
 #endif
 	{
 		Log(LOG_INFO,
-		    "Connection %d with \"%s:%d\" closed (in: %.1fk, out: %.1fk).",
-		    Idx, My_Connections[Idx].host, port,
+		    "Connection %d with \"%s:%u\" closed (in: %.1fk, out: %.1fk).",
+		    Idx, My_Connections[Idx].host, (unsigned)port,
 		    in_k, out_k);
 	}
 
@@ -1478,9 +1483,9 @@ New_Connection(int Sock, UNUSED bool IsSSL)
 
 	Client_SetHostname(c, My_Connections[new_sock].host);
 
-	Log(LOG_INFO, "Accepted connection %d from \"%s:%d\" on socket %d.",
+	Log(LOG_INFO, "Accepted connection %d from \"%s:%u\" on socket %d.",
 	    new_sock, My_Connections[new_sock].host,
-	    ng_ipaddr_getport(&new_addr), Sock);
+	    (unsigned)ng_ipaddr_getport(&new_addr), Sock);
 	Account_Connection();
 
 #ifdef SSL_SUPPORT
@@ -2053,9 +2058,9 @@ New_Server( int Server , ng_ipaddr_t *dest)
 	new_sock = socket(af_dest, SOCK_STREAM, 0);
 
 	Log(LOG_INFO,
-	    "Establishing connection for \"%s\" to \"%s:%d\" (%s), socket %d ...",
+	    "Establishing connection for \"%s\" to \"%s:%u\" (%s), socket %d ...",
 	    Conf_Server[Server].name, Conf_Server[Server].host,
-	    Conf_Server[Server].port, ip_str, new_sock);
+	    (unsigned)Conf_Server[Server].port, ip_str, new_sock);
 
 	if (new_sock < 0) {
 		Log(LOG_CRIT, "Can't create socket (af %d): %s!",
@@ -2071,6 +2076,8 @@ New_Server( int Server , ng_ipaddr_t *dest)
 
 	/* is a bind address configured? */
 	res = ng_ipaddr_af(&Conf_Server[Server].bind_addr);
+	if (res)
+		Set_Socket_ReuseAddr(new_sock);
 
 	/* if yes, bind now. If it fails, warn and let connect() pick a
 	 * source address */
@@ -2172,9 +2179,25 @@ Init_Conn_Struct(CONN_ID Idx)
 } /* Init_Conn_Struct */
 
 /**
+ * Allow immediate port reuse when binding a local socket.
+ */
+static void
+Set_Socket_ReuseAddr(int Sock)
+{
+	int value = 1;
+
+	if (setsockopt(Sock, SOL_SOCKET, SO_REUSEADDR, &value,
+		       (socklen_t)sizeof(value)) != 0) {
+		Log(LOG_ERR, "Can't set socket option SO_REUSEADDR: %s!",
+		    strerror(errno));
+		/* ignore this error */
+	}
+}
+
+/**
  * Initialize options of a new socket.
  *
- * For example, we try to set socket options SO_REUSEADDR and IPTOS_LOWDELAY.
+ * For example, we try to set socket option IPTOS_LOWDELAY.
  * The socket is automatically closed if a fatal error is encountered.
  *
  * @param Sock	Socket handle.
@@ -2190,15 +2213,6 @@ Init_Socket( int Sock )
 		    strerror(errno));
 		close(Sock);
 		return false;
-	}
-
-	/* Don't block this port after socket shutdown */
-	value = 1;
-	if (setsockopt(Sock, SOL_SOCKET, SO_REUSEADDR, &value,
-		       (socklen_t)sizeof(value)) != 0) {
-		Log(LOG_ERR, "Can't set socket option SO_REUSEADDR: %s!",
-		    strerror(errno));
-		/* ignore this error */
 	}
 
 	/* Set type of service (TOS) */

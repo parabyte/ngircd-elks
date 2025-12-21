@@ -2365,9 +2365,9 @@ Conf_DebugDump(void)
 		if (! Conf_Server[i].name[0])
 			continue;
 		LogDebug(
-		    " - %s: %s:%d, last=%ld, group=%d, flags=%d, conn=%d",
+		    " - %s: %s:%u, last=%ld, group=%d, flags=%d, conn=%d",
 		    Conf_Server[i].name, Conf_Server[i].host,
-		    Conf_Server[i].port, Conf_Server[i].lasttry,
+		    (unsigned)Conf_Server[i].port, Conf_Server[i].lasttry,
 		    Conf_Server[i].group, Conf_Server[i].flags,
 		    Conf_Server[i].conn_id);
 	}

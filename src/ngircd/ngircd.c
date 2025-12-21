@@ -59,6 +59,12 @@ static void Setup_FDStreams PARAMS(( int fd ));
 
 static bool NGIRCd_Init PARAMS(( bool ));
 
+#ifdef __ELKS__
+static bool NGIRCd_Daemonize PARAMS(( int ));
+static void NGIRCd_DaemonizeEarly PARAMS(( bool ));
+static bool NGIRCd_Daemonized;
+#endif
+
 
 /**
  * The main() function of ngIRCd.
@@ -78,24 +84,14 @@ main(int argc, const char *argv[])
 	int i;
 	size_t n;
 
-#ifdef __ELKS__
-	puts("DBG:1");
-#endif
-
 #if defined(DEBUG) && defined(HAVE_MTRACE)
 	/* enable GNU libc memory tracing when running in debug mode
 	 * and functionality available */
 	mtrace();
 #endif
 
-#ifdef __ELKS__
-	puts("DBG:2");
-#endif
 	umask(0077);
 
-#ifdef __ELKS__
-	puts("DBG:3");
-#endif
 	NGIRCd_SignalQuit = NGIRCd_SignalRestart = false;
 	NGIRCd_Passive = false;
 	NGIRCd_Debug = false;
@@ -103,9 +99,6 @@ main(int argc, const char *argv[])
 	NGIRCd_Sniffer = false;
 #endif
 
-#ifdef __ELKS__
-	puts("DBG:4");
-#endif
 	Fill_Version();
 
 	/* parse conmmand line */
@@ -257,54 +250,30 @@ main(int argc, const char *argv[])
 	}
 
 	while (!NGIRCd_SignalQuit) {
-#ifdef __ELKS__
-		puts("DBG:5 loop");
-#endif
 		/* Initialize global variables */
 		NGIRCd_Start = time(NULL);
-#ifdef __ELKS__
-		puts("DBG:6 time");
-#endif
 		(void)strftime(NGIRCd_StartStr, 64,
 			       "%a %b %d %Y at %H:%M:%S (%Z)",
 			       localtime(&NGIRCd_Start));
 
-#ifdef __ELKS__
-		puts("DBG:7 strftime");
-#endif
 		NGIRCd_SignalRestart = false;
 		NGIRCd_SignalQuit = false;
 
-#ifdef __ELKS__
-		puts("DBG:8 Log_Init");
-#endif
 		Log_Init(!NGIRCd_NoSyslog);
 #ifdef __ELKS__
-		puts("DBG:9 Random_Init");
+		NGIRCd_DaemonizeEarly(NGIRCd_NoDaemon);
 #endif
 		Random_Init();
-#ifdef __ELKS__
-		puts("DBG:10 Conf_Init");
-#endif
 		Conf_Init();
-#ifdef __ELKS__
-		puts("DBG:11 Log_ReInit");
-#endif
 		Log_ReInit();
 
 		/* Initialize the "main program":
 		 * chroot environment, user and group ID, ... */
-#ifdef __ELKS__
-		puts("DBG:12 NGIRCd_Init");
-#endif
 		if (!NGIRCd_Init(NGIRCd_NoDaemon)) {
 			Log(LOG_ALERT, "Fatal: Initialization failed, exiting!");
 			exit(1);
 		}
 
-#ifdef __ELKS__
-		puts("DBG:13 io_library_init");
-#endif
 		if (!io_library_init(CONNECTION_POOL)) {
 			Log(LOG_ALERT,
 			    "Fatal: Could not initialize IO routines: %s",
@@ -663,6 +632,67 @@ Random_Init(void)
 }
 #endif
 
+#ifdef __ELKS__
+static bool
+NGIRCd_Daemonize(int nullfd)
+{
+	pid_t pid;
+	int logfd;
+
+	pid = fork();
+	if (pid > 0)
+		exit(0);
+	if (pid < 0) {
+		fprintf(stderr,
+			"%s: Can't fork: %s!\nFatal error, exiting now ...\n",
+			PACKAGE_NAME, strerror(errno));
+		return false;
+	}
+
+	if (nullfd < 0)
+		nullfd = open("/dev/null", O_RDWR);
+	if (nullfd >= 0)
+		dup2(nullfd, 0);
+	else
+		close(0);
+
+	logfd = open("/dev/console", O_WRONLY);
+	if (logfd < 0)
+		logfd = nullfd;
+
+	if (logfd >= 0) {
+		dup2(logfd, 1);
+		dup2(logfd, 2);
+	}
+
+	if (logfd > 2)
+		close(logfd);
+	if (nullfd > 2 && nullfd != logfd)
+		close(nullfd);
+
+#ifdef HAVE_SETSID
+	(void)setsid();
+#else
+	setpgrp(0, getpid());
+#endif
+	signal(SIGINT, SIG_IGN);
+
+	return true;
+}
+
+static void
+NGIRCd_DaemonizeEarly(bool NGIRCd_NoDaemon)
+{
+	if (NGIRCd_NoDaemon || NGIRCd_Daemonized)
+		return;
+
+	if (!NGIRCd_Daemonize(-1))
+		exit(1);
+
+	NGIRCd_Daemonized = true;
+}
+#endif
+
 
 /**
  * Initialize ngIRCd daemon.
@@ -685,11 +715,17 @@ NGIRCd_Init(bool NGIRCd_NoDaemon)
 		return true;
 
 	if (!NGIRCd_NoDaemon) {
+#ifdef __ELKS__
+		if (!NGIRCd_Daemonized) {
+#endif
 		/* open /dev/null before chroot() */
 		fd = open( "/dev/null", O_RDWR);
 		if (fd < 0)
 			Log(LOG_WARNING, "Could not open /dev/null: %s",
 			    strerror(errno));
+#ifdef __ELKS__
+		}
+#endif
 	}
 
 	/* SSL initialization */
@@ -779,6 +815,16 @@ NGIRCd_Init(bool NGIRCd_NoDaemon)
 	 * connected to the controlling terminal. Use "--nodaemon"
 	 * to disable this "daemon mode" (useful for debugging). */
 	if (!NGIRCd_NoDaemon) {
+#ifdef __ELKS__
+		if (!NGIRCd_Daemonized) {
+			if (!NGIRCd_Daemonize(fd))
+				exit(1);
+			NGIRCd_Daemonized = true;
+		}
+		if (chdir("/") != 0)
+			Log(LOG_ERR, "Can't change directory to '/': %s!",
+				     strerror(errno));
+#else
 		pid = fork();
 		if (pid > 0) {
 			/* "Old" process: exit. */
@@ -806,6 +852,7 @@ NGIRCd_Init(bool NGIRCd_NoDaemon)
 		Setup_FDStreams(fd);
 		if (fd > 2)
 			close(fd);
+#endif
 	}
 	pid = getpid();
 
