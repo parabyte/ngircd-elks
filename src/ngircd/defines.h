@@ -97,13 +97,13 @@
 #define RECONNECT_DELAY 3
 
 /** Configuration file name. */
-#define CONFIG_FILE "/ngircd.conf"
+#define CONFIG_FILE "/ngircd.cnf"
 
 /** Directory containing optional configuration snippets. */
-#define CONFIG_DIR "/ngircd.conf.d"
+#define CONFIG_DIR "/ngircd.cnf.d"
 
 /** Name of the MOTD file. */
-#define MOTD_FILE "/ngircd.motd"
+#define MOTD_FILE "/ngircd.mot"
 
 /** Name of the help file. */
 #define HELP_FILE "/Commands.txt"

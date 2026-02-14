@@ -31,7 +31,7 @@ a) BOPM "IRC" section:
 
   1) Set "server" and "port" accordingly,
 
-  2) adjust the "oper" line to match an [Operator] block in ngircd.conf,
+  2) adjust the "oper" line to match an [Operator] block in ngircd.cnf,
 
   3) change "mode" to "+ci" or "+c".
 

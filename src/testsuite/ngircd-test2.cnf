@@ -6,7 +6,7 @@
 	Info = ngIRCd Test-Server 2
 	Listen = 127.0.0.1
 	Ports = 6790
-	MotdFile = ngircd-test2.motd
+	MotdFile = ngircd-test2.mot
 	AdminEMail = admin@irc.server2
 
 [Limits]

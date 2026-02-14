@@ -28,7 +28,7 @@ Setting up ngIRCd
 ~~~~~~~~~~~~~~~~~
 
 The "pseudo server" handling the IRC services is configured as a regular
-remote server in the ngircd.conf(5). In addition the variable "ServiceMask"
+remote server in the ngircd.cnf(5). In addition the variable "ServiceMask"
 should be set, enabling this ngIRCd to recognize the "pseudo users" as IRC
 services instead of regular IRC users.
 

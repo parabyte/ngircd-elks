@@ -21,25 +21,25 @@ everything was parsed as expected!
 
 After installing ngIRCd, a sample configuration file should have been set up if
 none existed already. By default, when installing from sources, the file is
-named `/usr/local/etc/ngircd.conf` (other common names, especially for
-distribution packages, are `/etc/ngircd.conf` or `/etc/ngircd/ngircd.conf`).
+named `/usr/local/etc/ngircd.cnf` (other common names, especially for
+distribution packages, are `/etc/ngircd.cnf` or `/etc/ngircd/ngircd.cnf`).
 Run the command `ngircd --configtest` to check the name of the configuration
 file which is used by default on your local system.
 
 In addition, ngIRCd supports configuration file snippets in a "drop-in"
 directory which is configured with the `IncludeDir` variable in the `[Options]`
-section and has a built-in default value (like `/etc/ngircd/ngircd.conf.d/`).
-All configuration files matching the `*.conf` pattern are read-in from this
-directory after the main `ngircd.conf` file.
+section and has a built-in default value (like `/etc/ngircd/ngircd.cnf.d/`).
+All configuration files matching the `*.cnf` pattern are read-in from this
+directory after the main `ngircd.cnf` file.
 
-It is a good idea to not edit the default `ngircd.conf` file but to create one
+It is a good idea to not edit the default `ngircd.cnf` file but to create one
 ore more new files in this include directory, overriding the defaults as
 needed. This way you don't get any clashes when updating ngIRCd to newer
 releases.
 
 You can find the template of the sample configuration file in the `doc/`
-directory as `sample-ngircd.conf` and
-[online](https://ngircd.barton.de/doc/sample-ngircd.conf) on the homepage. It
+directory as `sample-ngircd.cnf` and
+[online](https://ngircd.barton.de/doc/sample-ngircd.cnf) on the homepage. It
 contains all available options.
 
 ## Configuration File Syntax
@@ -52,7 +52,7 @@ parameters of the form `name = value`.
 
 Section and parameter names are not case sensitive.
 
-Please see the `ngircd.conf`(5) manual page for an in-depth description of the
+Please see the `ngircd.cnf`(5) manual page for an in-depth description of the
 configuration file, its syntax and all supported configuration options.
 
 The sample configuration file uses comments beginning with `#` *or* `;` -- this

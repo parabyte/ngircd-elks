@@ -42,16 +42,16 @@ maps the host port 6667 on localhost to the port 6667 inside of the container.
 ### Configuring the container
 
 The ngIRCd inside of the container is installed inside of `/opt/ngircd/` and the
-default drop-in directory is `/opt/ngircd/etc/ngircd.conf.d`. Therefore you can
+default drop-in directory is `/opt/ngircd/etc/ngircd.cnf.d`. Therefore you can
 map a host folder to this drop-in directory inside of the container and place
 drop-in configuration file(s) in the host path like this:
 
 ```bash
-mkdir -p /host/path/to/ngircd/conf.d
-touch /host/path/to/ngircd/conf.d/my.conf
+mkdir -p /host/path/to/ngircd/cnf.d
+touch /host/path/to/ngircd/cnf.d/my.cnf
 podman run --name=ngircd --detach \
   -p 127.0.0.1:6667:6667 \
-  -v "/host/path/to/ngircd/conf.d:/opt/ngircd/etc/ngircd.conf.d" \
+  -v "/host/path/to/ngircd/cnf.d:/opt/ngircd/etc/ngircd.cnf.d" \
   ngircd:<tag>
 ```
 
@@ -65,7 +65,7 @@ the container by simply appending it to the "run" command line like this:
 
 ```bash
 podman run --rm -it \
-  -v "/host/path/to/ngircd/conf.d:/opt/ngircd/etc/ngircd.conf.d" \
+  -v "/host/path/to/ngircd/cnf.d:/opt/ngircd/etc/ngircd.cnf.d" \
   ngircd:<tag> \
   --configtest
 ```

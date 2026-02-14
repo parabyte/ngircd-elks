@@ -1026,7 +1026,7 @@ Read_Config(bool TestOnly, bool IsStarting)
 	if (dh) {
 		while ((entry = readdir(dh)) != NULL) {
 			ptr = strrchr(entry->d_name, '.');
-			if (!ptr || strcasecmp(ptr, ".conf") != 0)
+			if (!ptr || strcasecmp(ptr, ".cnf") != 0)
 				continue;
 			snprintf(file, sizeof(file), "%s/%s",
 				 Conf_IncludeDir, entry->d_name);

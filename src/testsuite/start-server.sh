@@ -34,14 +34,14 @@ if [ $? -eq 0 ]; then
 fi
 
 # generate MOTD for test-server
-echo "This is an ngIRCd Test Server" >ngircd-test${id}.motd
+echo "This is an ngIRCd Test Server" >ngircd-test${id}.mot
 
 # glibc memory checking, see malloc(3)
 MALLOC_CHECK_=3
 export MALLOC_CHECK_
 
 # starting up test-server ...
-./T-ngircd${id} -n -f "${srcdir}/ngircd-test${id}.conf" "$@" \
+./T-ngircd${id} -n -f "${srcdir}/ngircd-test${id}.cnf" "$@" \
  >ngircd-test${id}.log 2>&1 &
 sleep 1
 

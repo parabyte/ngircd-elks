@@ -36,9 +36,9 @@ static_docs = \
 	Services.txt \
 	SSL.md
 
-doc_templates = sample-ngircd.conf.tmpl
+doc_templates = sample-ngircd.cnf.tmpl
 
-generated_docs = sample-ngircd.conf
+generated_docs = sample-ngircd.cnf
 
 toplevel_docs = ../AUTHORS.md ../COPYING ../ChangeLog ../INSTALL.md ../NEWS ../README.md
 
@@ -55,7 +55,7 @@ all: $(generated_docs)
 
 install-data-hook: $(static_docs) $(toplevel_docs) $(generated_docs)
 	$(MKDIR_P) -m 755 $(DESTDIR)$(sysconfdir)
-	@if [ ! -f $(DESTDIR)$(sysconfdir)/ngircd.conf ]; then \
+	@if [ ! -f $(DESTDIR)$(sysconfdir)/ngircd.cnf ]; then \
 	  ${MAKE} install-config; \
 	 fi
 	$(MKDIR_P) -m 755 $(DESTDIR)$(docdir)
@@ -67,25 +67,25 @@ install-data-hook: $(static_docs) $(toplevel_docs) $(generated_docs)
 	 done
 
 install-config:
-	$(INSTALL) -m 600 -c sample-ngircd.conf $(DESTDIR)$(sysconfdir)/ngircd.conf
+	$(INSTALL) -m 600 -c sample-ngircd.cnf $(DESTDIR)$(sysconfdir)/ngircd.cnf
 	@echo; \
 	 echo " ** NOTE: Installed sample configuration file:"; \
-	 echo " ** \"$(DESTDIR)$(sysconfdir)/ngircd.conf\""; \
+	 echo " ** \"$(DESTDIR)$(sysconfdir)/ngircd.cnf\""; \
 	 echo
 
 uninstall-hook:
 	rm -rf $(DESTDIR)$(docdir)
-	@if cmp --silent sample-ngircd.conf $(DESTDIR)$(sysconfdir)/ngircd.conf; then \
+	@if cmp --silent sample-ngircd.cnf $(DESTDIR)$(sysconfdir)/ngircd.cnf; then \
 	  ${MAKE} uninstall-config; \
 	 else \
 	  echo; \
 	  echo " ** NOTE: Not uninstalling changed configuration file:"; \
-	  echo " ** \"$(DESTDIR)$(sysconfdir)/ngircd.conf\""; \
+	  echo " ** \"$(DESTDIR)$(sysconfdir)/ngircd.cnf\""; \
 	  echo; \
 	 fi
 
 uninstall-config:
-	rm -f $(DESTDIR)$(sysconfdir)/ngircd.conf
+	rm -f $(DESTDIR)$(sysconfdir)/ngircd.cnf
 
 .PHONY: install-config uninstall-config
 

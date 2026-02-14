@@ -3,7 +3,7 @@ At the moment can only support 5 concurrent users. "Still got some work to do!"
 Daemon mode at this time does not work due to a few technical issues that need to be worked out.
 so its incredibly important to issue -n flag to ngircd when running this daemon
 
-The bare minimal config for ngircd is just its ngircd.conf file which i expect the end user to manually put into elks/elkscmd/rootfs_template/ manually
+The bare minimal config for ngircd is just its ngircd.cnf file which i expect the end user to manually put into elks/elkscmd/rootfs_template/ manually
 
 I expect the end user to manually make a sbin folder or a folder of there choosing in the rootfs_template and stick the binary in there
 
